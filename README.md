@@ -1,4 +1,4 @@
-# 🍿 Mediathek: Die lokale Film und Seriendaatenbank
+# 🍿 Mediathek: Die lokale Film und Seriendatenbank
 
 **Ein selbst gehostetes, modernes Medien-Frontend auf Basis von Node.js und TMDB.**
 
