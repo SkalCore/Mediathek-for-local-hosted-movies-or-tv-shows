@@ -5,8 +5,8 @@ const url = require('url');
 const crypto = require('crypto');
 
 // *** KONFIGURATION ***
-const API_KEY = 'd281d039ffc99483e63e82522a963133';
-const OMDB_KEY = '1ee155b6';
+const API_KEY = 'IHR_TMDB_API_KEY';
+const OMDB_KEY = 'IHR_OMDB_API_KEY';
 const LANG = 'de-DE';
 const PORT = 3000;
 const UPLOAD_DIR = 'uploads';
