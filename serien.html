@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Meine Seriensammlung</title>
+    <style>
+        /* --- BASIS DESIGN --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #141414; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        header { width: 100%; max-width: 1400px; text-align: center; margin-bottom: 20px; padding: 20px 0; border-bottom: 1px solid #333; }
+        h1 { margin: 0; color: #e50914; text-transform: uppercase; letter-spacing: 4px; font-size: 2.5rem; font-weight: 700; }
+
+        /* --- STEUERUNG --- */
+        .controls-area { width: 100%; max-width: 1000px; margin-bottom: 30px; display: flex; gap: 15px; }
+        .large-input { padding: 15px 20px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; font-size: 1.2rem; outline: none; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .large-input:focus { border-color: #e50914; background: #333; }
+        #yearFilter { flex-basis: 200px; cursor: pointer; }
+        #searchInput { flex-grow: 1; }
+
+        /* --- GRID --- */
+        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 15px; width: 100%; max-width: 1400px; flex-grow: 1; }
+        .card { aspect-ratio: 2/3; background: #222; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.8); border: 2px solid #e50914; }
+        .card img { width: 100%; height: 100%; object-fit: cover; }
+        .card-title-overlay { position: absolute; bottom: 0; background: linear-gradient(to top, black, transparent); width: 100%; padding: 10px 5px; font-size: 0.8rem; text-align: center; display: none; text-shadow: 0 1px 3px black; }
+        .card:hover .card-title-overlay { display: block; }
+        .results-count { width: 100%; text-align: center; margin-top: 10px; color: #666; font-size: 0.9rem; }
+
+        /* --- PAGINATION --- */
+        .pagination { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
+        #paginationControlsTop { margin-bottom: 20px; margin-top: 0; }
+        #paginationControlsBottom { margin-top: 40px; margin-bottom: 40px; }
+        .page-btn { padding: 10px 18px; background: #333; border: none; color: white; cursor: pointer; border-radius: 4px; font-size: 1rem; transition: background 0.2s; }
+        .page-btn:hover { background: #555; }
+        .page-btn.active { background: #e50914; font-weight: bold; }
+        .page-btn:disabled { opacity: 0.5; cursor: default; }
+
+        /* --- MODAL (HAUPTCONTAINER) --- */
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
+
+        .modal-box {
+            background: #181818;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            border-radius: 12px;
+            position: relative; /* Wichtig für absolute Positionierung des X */
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            overflow: hidden; /* Damit nichts rausragt */
+        }
+
+        /* --- DAS X ZUM SCHLIESSEN --- */
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 45px;
+            cursor: pointer;
+            color: #fff;
+            z-index: 2000; /* Muss über allem liegen */
+            line-height: 0.6;
+            padding: 5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            transition: transform 0.2s;
+        }
+        .close:hover { transform: scale(1.1); color: #e50914; }
+
+        /* --- INHALT LAYOUT (LINKS / RECHTS) --- */
+        .modal-content-grid {
+            display: flex; /* Das stellt sicher, dass sie nebeneinander sind */
+            flex-direction: row;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Linke Seite (Poster & Info) */
+        .modal-left {
+            width: 35%;
+            min-width: 300px; /* Mindestbreite */
+            padding: 40px 30px;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+            background: #1f1f1f;
+            box-sizing: border-box;
+        }
+
+        /* Rechte Seite (Staffeln) */
+        .modal-right {
+            width: 65%;
+            padding: 40px 30px;
+            overflow-y: auto;
+            background: #181818;
+            box-sizing: border-box;
+        }
+
+        /* Bilder & Video */
+        .modal-poster {
+            width: 100%;
+            max-height: 500px; /* VERHINDERT RIESIGE POSTER */
+            object-fit: contain; /* Bild behält Proportionen */
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            display: block;
+        }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; background: black; margin-bottom: 20px; border-radius: 8px; overflow: hidden; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+        .modal-left h2 { margin-top: 0; font-size: 2rem; color: #e50914; line-height: 1.1; }
+        .desc { color: #ccc; line-height: 1.6; margin-top: 15px; }
+
+        /* --- AKKORDEON & EPISODEN --- */
+        .season-item { margin-bottom: 15px; border: 1px solid #333; border-radius: 6px; overflow: hidden; background: #222; }
+        .season-header { padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; font-weight: bold; font-size: 1.1rem; transition: background 0.2s; }
+        .season-header:hover { background: #333; }
+        .season-header::after { content: '+'; font-size: 1.5rem; color: #888; }
+        .season-item.active .season-header::after { content: '-'; color: white; }
+        .season-item.active .season-header { border-bottom: 1px solid #333; }
+        .episode-list { display: none; }
+        .season-item.active .episode-list { display: block; }
+
+        .episode-row { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #2a2a2a; font-size: 0.95rem; align-items: center; transition: background 0.2s; cursor: pointer; }
+        .episode-row:last-child { border-bottom: none; }
+        .episode-row:hover { background: #333; }
+        .episode-row:hover::after { content: '✎'; color: #888; margin-left: 10px; }
+
+        /* Status Farben */
+        .ep-present { border-left: 3px solid #46d369; background: rgba(70, 211, 105, 0.05); }
+        .ep-present .ep-status { font-size: 0.75rem; background: #003300; color: #46d369; padding: 2px 6px; border-radius: 4px; margin-left: 10px; }
+
+        .ep-missing { border-left: 3px solid #e50914; background: rgba(229, 9, 20, 0.05); color: #ff9999; }
+        .ep-missing .ep-status { font-size: 0.75rem; background: #4a0000; color: #ff4d4d; padding: 2px 6px; border-radius: 4px; margin-left: 10px; }
+        .ep-date { font-size: 0.85rem; color: #888; min-width: 80px; text-align: right;}
+        .ep-missing .ep-date { color: #ff4d4d; font-weight: bold; }
+
+        @media (max-width: 900px) {
+            .modal-content-grid { flex-direction: column; overflow-y: auto; }
+            .modal-left, .modal-right { width: 100%; border-right: none; height: auto; }
+            .close { top: 5px; right: 10px; font-size: 35px; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header><h1>Meine Serien</h1></header>
+
+    <div class="controls-area">
+        <select id="yearFilter" class="large-input" onchange="applyFilter()"><option value="">📅 Alle Jahre</option></select>
+        <input type="text" id="searchInput" class="large-input" placeholder="🔍 Serie suchen..." onkeyup="applyFilter()">
+    </div>
+
+    <div class="pagination" id="paginationControlsTop"></div>
+
+    <div id="grid"></div>
+    <div class="results-count" id="countDisplay"></div>
+
+    <div class="pagination" id="paginationControlsBottom"></div>
+
+    <div id="modal" onclick="if(event.target.id==='modal') closeM()">
+        <div class="modal-box">
+            <span class="close" onclick="closeM()">&times;</span>
+            <div class="modal-content-grid">
+                <div class="modal-left">
+                    <img id="mPoster" class="modal-poster" src="" alt="">
+                    <div class="video-container" id="vid"></div>
+                    <h2 id="mTitle"></h2>
+                    <div style="margin-bottom:15px; color:#46d369; font-weight:bold;"><span id="mYear"></span> | ⭐ <span id="mRat"></span></div>
+                    <p class="desc" id="mDesc"></p>
+                </div>
+                <div class="modal-right" id="seasonContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="serien_datenbank.js"></script>
+
+    <script>
+        // *** CONFIG ***
+        const ITEMS_PER_PAGE = 21;
+        const ADMIN_PASSWORD = "1234";
+
+        let currentPage = 1;
+        let currentFilteredList = [];
+        let allSeriesRef = [];
+        let currentOpenSerie = null;
+        let manualOverrides = {};
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (typeof meineSerien === 'undefined') {
+                document.getElementById('grid').innerHTML = '<h3>⚠️ Datenbank fehlt!</h3>'; return;
+            }
+
+            await loadOverridesFromServer();
+
+            allSeriesRef = meineSerien.sort((a,b) => a.title.localeCompare(b.title));
+            populateYearFilter();
+            applyFilter();
+        });
+
+        // --- SERVER KOMMUNIKATION ---
+        async function loadOverridesFromServer() {
+            try {
+                const res = await fetch('http://localhost:3000/api/status');
+                if(res.ok) manualOverrides = await res.json();
+            } catch(e) { console.error("Konnte Status nicht laden", e); }
+        }
+
+        async function saveOverridesToServer() {
+            try {
+                await fetch('http://localhost:3000/api/status', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(manualOverrides)
+                });
+            } catch(e) { console.error("Konnte Status nicht speichern", e); }
+        }
+
+        // --- FILTER & RENDER ---
+        function applyFilter() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const year = document.getElementById('yearFilter').value;
+            currentFilteredList = allSeriesRef.filter(m => {
+                return m.title.toLowerCase().includes(term) && (year === "" || m.year == year);
+            });
+            currentPage = 1; renderPage(); renderPaginationControls();
+        }
+
+        function renderPage() {
+            const grid = document.getElementById('grid');
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const pageItems = currentFilteredList.slice(start, end);
+            grid.innerHTML = pageItems.length ? pageItems.map(m => `
+                <div class="card" onclick='openM(${JSON.stringify(m.id)})'>
+                    <img src="${m.poster || ''}" loading="lazy">
+                    <div class="card-title-overlay">${m.title}</div>
+                </div>
+            `).join('') : '<p style="text-align:center;width:100%;color:#888;">Nichts gefunden.</p>';
+            document.getElementById('countDisplay').innerText = `Zeige ${start + 1} bis ${Math.min(end, currentFilteredList.length)} von ${currentFilteredList.length} Serien`;
+        }
+
+        // --- PAGINATION (FILM-STYLE) ---
+        function renderPaginationControls() {
+            const totalPages = Math.ceil(currentFilteredList.length / ITEMS_PER_PAGE);
+            const containers = [document.getElementById('paginationControlsTop'), document.getElementById('paginationControlsBottom')];
+            containers.forEach(c => c.innerHTML = '');
+            if (totalPages <= 1) return;
+
+            containers.forEach(container => {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'page-btn'; prevBtn.innerText = '« Zurück';
+                prevBtn.disabled = currentPage === 1;
+                prevBtn.onclick = () => changePage(currentPage - 1);
+                container.appendChild(prevBtn);
+
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, currentPage + 2);
+
+                if (startPage > 1) { container.appendChild(createPageBtn(1)); if (startPage > 2) container.appendChild(createSpan("...")); }
+                for (let i = startPage; i <= endPage; i++) container.appendChild(createPageBtn(i));
+                if (endPage < totalPages) { if (endPage < totalPages - 1) container.appendChild(createSpan("...")); container.appendChild(createPageBtn(totalPages)); }
+
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'page-btn'; nextBtn.innerText = 'Weiter »';
+                nextBtn.disabled = currentPage === totalPages;
+                nextBtn.onclick = () => changePage(currentPage + 1);
+                container.appendChild(nextBtn);
+            });
+        }
+        function createPageBtn(p) {
+            const btn = document.createElement('button');
+            btn.className = `page-btn ${currentPage === p ? 'active' : ''}`;
+            btn.innerText = p; btn.onclick = () => changePage(p); return btn;
+        }
+        function createSpan(t) { const s = document.createElement('span'); s.innerText = t; s.style.color = '#666'; s.style.alignSelf = 'center'; return s; }
+        function changePage(p) { currentPage = p; renderPage(); renderPaginationControls(); window.scrollTo(0,0); }
+
+        function populateYearFilter() {
+            const s = document.getElementById('yearFilter');
+            [...new Set(allSeriesRef.map(m => m.year).filter(y => y))].sort((a,b)=>b-a).forEach(y => { s.innerHTML += `<option value="${y}">${y}</option>`; });
+        }
+
+        // --- MODAL & LOGIK ---
+        function openM(id) {
+            const serie = allSeriesRef.find(s => s.id === id);
+            if(!serie) return;
+            currentOpenSerie = serie;
+            document.getElementById('mTitle').innerText = serie.title;
+            document.getElementById('mYear').innerText = serie.year;
+            document.getElementById('mRat').innerText = serie.rating;
+            document.getElementById('mDesc').innerText = serie.desc || "Keine Info.";
+            document.getElementById('mPoster').src = serie.poster || '';
+            const vid = document.getElementById('vid');
+            vid.innerHTML = serie.trailerId ? `<iframe src="https://www.youtube.com/embed/${serie.trailerId}" allowfullscreen></iframe>` : '';
+            vid.style.display = serie.trailerId ? 'block' : 'none';
+            renderSeasons(serie);
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function renderSeasons(serie) {
+            const container = document.getElementById('seasonContainer'); container.innerHTML = '';
+            if(!serie.seasons || serie.seasons.length === 0) { container.innerHTML = '<p>Keine Daten.</p>'; return; }
+
+            serie.seasons.forEach(season => {
+                const sDiv = document.createElement('div'); sDiv.className = 'season-item';
+                const header = document.createElement('div'); header.className = 'season-header';
+                header.innerText = `${season.title} (${season.episodes.length} Ep.)`;
+                header.onclick = () => { sDiv.classList.toggle('active'); };
+                const epList = document.createElement('div'); epList.className = 'episode-list';
+
+                season.episodes.forEach(ep => {
+                    const row = document.createElement('div');
+                    const uniqueEpId = `${serie.id}_S${season.number}_E${ep.no}`;
+                    const today = new Date().toISOString().split('T')[0];
+                    let isMissing = !ep.date || ep.date > today;
+
+                    if (manualOverrides.hasOwnProperty(uniqueEpId)) {
+                        if (manualOverrides[uniqueEpId] === 'present') isMissing = false;
+                        if (manualOverrides[uniqueEpId] === 'missing') isMissing = true;
+                    }
+
+                    row.className = isMissing ? 'episode-row ep-missing' : 'episode-row ep-present';
+                    const statusText = isMissing ? "<span class='ep-status'>FEHLT</span>" : "<span class='ep-status'>VORHANDEN</span>";
+
+                    row.innerHTML = `<div><strong>${ep.no}. ${ep.title}</strong>${statusText}</div><div class="ep-date">${formatDate(ep.date)}</div>`;
+                    row.onclick = (e) => { e.stopPropagation(); toggleStatus(uniqueEpId, isMissing); };
+                    epList.appendChild(row);
+                });
+                sDiv.appendChild(header); sDiv.appendChild(epList); container.appendChild(sDiv);
+            });
+        }
+
+        function toggleStatus(epId, currentlyMissing) {
+            const password = prompt("🔐 Passwort für Status-Änderung:", "");
+            if (password === ADMIN_PASSWORD) {
+                const newState = currentlyMissing ? 'present' : 'missing';
+                manualOverrides[epId] = newState;
+                saveOverridesToServer();
+                renderSeasons(currentOpenSerie);
+            } else if (password !== null) {
+                alert("Falsches Passwort!");
+            }
+        }
+
+        function formatDate(s) { if(!s) return 'TBA'; const [y, m, d] = s.split('-'); return `${d}.${m}.${y}`; }
+        function closeM() { document.getElementById('modal').style.display = 'none'; document.getElementById('vid').innerHTML = ''; }
+    </script>
+</body>
+</html>

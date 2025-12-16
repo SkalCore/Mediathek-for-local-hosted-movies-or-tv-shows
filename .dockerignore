@@ -1,0 +1,11 @@
+# Node Module
+node_modules
+npm-debug.log
+.DS_Store
+
+# Temporäre oder lokale Dateien
+.vscode
+*.log
+
+# Wir ignorieren die Datenbank-Dateien nicht,
+# da diese Teil der Konfiguration sind.

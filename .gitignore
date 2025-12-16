@@ -1,0 +1,4 @@
+# Lokale Dateien, die ignoriert werden sollen
+node_modules/
+.DS_Store
+*.log

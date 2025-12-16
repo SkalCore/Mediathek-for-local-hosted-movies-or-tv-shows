@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mediathek:
+    # Docker Compose soll das Image basierend auf dem lokalen Dockerfile bauen
+    build: .
+
+    # Name des Containers
+    container_name: mediathek_server
+
+    # Port-Mapping: Host Port:Container Port
+    ports:
+      - "3000:3000"
+
+    # Neustartrichtlinie: Startet den Container immer neu,
+    # außer er wird explizit gestoppt. Perfekt für Serverbetrieb.
+    restart: unless-stopped
+
+    # Volumes: Bindet die wichtigen lokalen Datenordner und Dateien
+    # in den Container ein, damit Daten persistent sind.
+    volumes:
+      # WICHTIGE Dateien (Konfiguration, Datenbank-Inhalt)
+      -  /srv/dev-disk-by-uuid-76eec82f-fbba-4e84-8905-f78293badf22/docker/config/modernMediathek/datenbank.js:/usr/src/app/datenbank.js
+      -  /srv/dev-disk-by-uuid-76eec82f-fbba-4e84-8905-f78293badf22/docker/config/modernMediathek/serien_datenbank.js:/usr/src/app/serien_datenbank.js
+      -  /srv/dev-disk-by-uuid-76eec82f-fbba-4e84-8905-f78293badf22/docker/config/modernMediathek/users.json:/usr/src/app/users.json
+      -  /srv/dev-disk-by-uuid-76eec82f-fbba-4e84-8905-f78293badf22/docker/config/modernMediathek/media_overrides.json:/usr/src/app/media_overrides.json
+      -  /srv/dev-disk-by-uuid-76eec82f-fbba-4e84-8905-f78293badf22/docker/config/modernMediathek//custom_collections.json:/usr/src/app/custom_collections.json
+      -  /srv/dev-disk-by-uuid-76eec82f-fbba-4e84-8905-f78293badf22/docker/config/modernMediathek/collection_settings.json:/usr/src/app/collection_settings.json
+      -  /srv/dev-disk-by-uuid-76eec82f-fbba-4e84-8905-f78293badf22/docker/config/modernMediathek/episode_status.json:/usr/src/app/episode_status.json
+
+      # Wichtiger Ordner für hochgeladene Poster
+      -  /srv/dev-disk-by-uuid-76eec82f-fbba-4e84-8905-f78293badf22/docker/config/modernMediathek/uploads:/usr/src/app/uploads
+
+      # Kopiert den Rest des Codes, schließt aber .dockerignore aus
+      - .:/usr/src/app
+
+    # Umgebungsvariablen (falls Sie TMDB-Keys extern speichern möchten, optional)
+    environment:
+      # Hier können Sie Ihre TMDB Schlüssel eintragen,
+      # falls Sie diese NICHT in der server.js hinterlegen möchten.
+      # API_KEY: "IHR_API_SCHLÜSSEL"
+      # OMDB_KEY: "IHR_OMDB_SCHLÜSSEL"
+      TZ: Europe/Berlin
