@@ -1,4 +1,4 @@
-# 🍿 Mediathek: Der Premium-Streaming-Server
+# 🍿 Mediathek: Die lokale Film und Seriendaatenbank
 
 **Ein selbst gehostetes, modernes Medien-Frontend auf Basis von Node.js und TMDB.**
 
